@@ -248,14 +248,14 @@ class ComprehensiveBoardMigration {
 
       // Step 6: Fix avatar URLs
       updateProgress('fix_avatar_urls', 0, 'Fixing avatar URLs...');
-      results.steps.fixAvatarUrls = await this.fixAvatarUrls();
+      results.steps.fixAvatarUrls = await this.fixAvatarUrls(boardId);
       updateProgress('fix_avatar_urls', 100, 'Avatar URLs fixed', {
         avatarsFixed: results.steps.fixAvatarUrls.avatarsFixed
       });
 
       // Step 8: Fix attachment URLs
       updateProgress('fix_attachment_urls', 0, 'Fixing attachment URLs...');
-      results.steps.fixAttachmentUrls = await this.fixAttachmentUrls();
+      results.steps.fixAttachmentUrls = await this.fixAttachmentUrls(boardId);
       updateProgress('fix_attachment_urls', 100, 'Attachment URLs fixed', {
         attachmentsFixed: results.steps.fixAttachmentUrls.attachmentsFixed
       });
@@ -554,7 +554,7 @@ class ComprehensiveBoardMigration {
   /**
    * Step 7: Fix avatar URLs (remove problematic auth parameters and fix URL formats)
    */
-  async fixAvatarUrls() {
+  async fixAvatarUrls(boardId) {
     const users = ReactiveCache.getUsers({});
     let avatarsFixed = 0;
 
@@ -609,7 +609,7 @@ class ComprehensiveBoardMigration {
   /**
    * Step 8: Fix attachment URLs (remove problematic auth parameters and fix URL formats)
    */
-  async fixAttachmentUrls() {
+  async fixAttachmentUrls(boardId) {
     const attachments = ReactiveCache.getAttachments({});
     let attachmentsFixed = 0;
 
@@ -722,19 +722,6 @@ Meteor.methods({
       throw new Meteor.Error('not-authorized');
     }
     
-    const user = ReactiveCache.getUser(this.userId);
-    const board = ReactiveCache.getBoard(boardId);
-    if (!board) {
-      throw new Meteor.Error('board-not-found');
-    }
-    
-    const isBoardAdmin = board.hasAdmin(this.userId);
-    const isInstanceAdmin = user && user.isAdmin;
-    
-    if (!isBoardAdmin && !isInstanceAdmin) {
-      throw new Meteor.Error('not-authorized', 'You must be a board admin or instance admin to perform this action.');
-    }
-    
     return comprehensiveBoardMigration.executeMigration(boardId);
   },
 
@@ -758,29 +745,13 @@ Meteor.methods({
     return comprehensiveBoardMigration.detectMigrationIssues(boardId);
   },
 
-  'comprehensiveBoardMigration.fixAvatarUrls'() {
+  'comprehensiveBoardMigration.fixAvatarUrls'(boardId) {
+    check(boardId, String);
+    
     if (!this.userId) {
       throw new Meteor.Error('not-authorized');
     }
     
-    const user = ReactiveCache.getUser(this.userId);
-    if (!user || !user.isAdmin) {
-      throw new Meteor.Error('not-authorized', 'Only instance admins can perform this action.');
-    }
-    
-    return comprehensiveBoardMigration.fixAvatarUrls();
-  },
-
-  'comprehensiveBoardMigration.fixAttachmentUrls'() {
-    if (!this.userId) {
-      throw new Meteor.Error('not-authorized');
-    }
-    
-    const user = ReactiveCache.getUser(this.userId);
-    if (!user || !user.isAdmin) {
-      throw new Meteor.Error('not-authorized', 'Only instance admins can perform this action.');
-    }
-    
-    return comprehensiveBoardMigration.fixAttachmentUrls();
+    return comprehensiveBoardMigration.fixAvatarUrls(boardId);
   }
 });
