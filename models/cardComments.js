@@ -313,7 +313,8 @@ if (Meteor.isServer) {
    *
    * @param {string} boardId the board ID of the card
    * @param {string} cardId the ID of the card
-   * @param {string} comment the content of the comment
+   * @param {string} authorId the user who 'posted' the comment
+   * @param {string} text the content of the comment
    * @return_type {_id: string}
    */
   JsonRoutes.add(
@@ -325,7 +326,7 @@ if (Meteor.isServer) {
         const paramCardId = req.params.cardId;
         Authentication.checkBoardAccess(req.userId, paramBoardId);
         const id = CardComments.direct.insert({
-          userId: req.userId,
+          userId: req.body.authorId,
           text: req.body.comment,
           cardId: paramCardId,
           boardId: paramBoardId,
@@ -343,7 +344,7 @@ if (Meteor.isServer) {
           cardId: paramCardId,
           boardId: paramBoardId,
         });
-        commentCreation(req.userId, cardComment);
+        commentCreation(req.body.authorId, cardComment);
       } catch (error) {
         JsonRoutes.sendResult(res, {
           code: 200,
