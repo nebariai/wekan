@@ -259,26 +259,7 @@ if (Meteor.isServer) {
       check(fileObjId, String);
       check(storageDestination, String);
 
-      if (!this.userId) {
-        throw new Meteor.Error('not-authorized', 'You must be logged in.');
-      }
-
       const fileObj = ReactiveCache.getAttachment(fileObjId);
-      if (!fileObj) {
-        throw new Meteor.Error('attachment-not-found', 'Attachment not found');
-      }
-
-      const board = ReactiveCache.getBoard(fileObj.boardId);
-      if (!board || !board.isVisibleBy({ _id: this.userId })) {
-        throw new Meteor.Error('not-authorized', 'You do not have access to this board.');
-      }
-
-      // Allowlist storage destinations
-      const allowedDestinations = ['fs', 'gridfs', 's3'];
-      if (!allowedDestinations.includes(storageDestination)) {
-        throw new Meteor.Error('invalid-storage-destination', 'Invalid storage destination');
-      }
-
       moveToStorage(fileObj, storageDestination, fileStoreStrategyFactory);
     },
     renameAttachment(fileObjId, newName) {
@@ -313,20 +294,7 @@ if (Meteor.isServer) {
     validateAttachment(fileObjId) {
       check(fileObjId, String);
 
-      if (!this.userId) {
-        throw new Meteor.Error('not-authorized', 'You must be logged in.');
-      }
-
       const fileObj = ReactiveCache.getAttachment(fileObjId);
-      if (!fileObj) {
-        throw new Meteor.Error('attachment-not-found', 'Attachment not found');
-      }
-
-      const board = ReactiveCache.getBoard(fileObj.boardId);
-      if (!board || !board.isVisibleBy({ _id: this.userId })) {
-        throw new Meteor.Error('not-authorized', 'You do not have access to this board.');
-      }
-
       const isValid = Promise.await(isFileValid(fileObj, attachmentUploadMimeTypes, attachmentUploadSize, attachmentUploadExternalProgram));
 
       if (!isValid) {
@@ -337,31 +305,11 @@ if (Meteor.isServer) {
       check(fileObjId, String);
       check(storageDestination, String);
 
-      if (!this.userId) {
-        throw new Meteor.Error('not-authorized', 'You must be logged in.');
-      }
-
-      const fileObj = ReactiveCache.getAttachment(fileObjId);
-      if (!fileObj) {
-        throw new Meteor.Error('attachment-not-found', 'Attachment not found');
-      }
-
-      const board = ReactiveCache.getBoard(fileObj.boardId);
-      if (!board || !board.isVisibleBy({ _id: this.userId })) {
-        throw new Meteor.Error('not-authorized', 'You do not have access to this board.');
-      }
-
-      // Allowlist storage destinations
-      const allowedDestinations = ['fs', 'gridfs', 's3'];
-      if (!allowedDestinations.includes(storageDestination)) {
-        throw new Meteor.Error('invalid-storage-destination', 'Invalid storage destination');
-      }
-
       Meteor.call('validateAttachment', fileObjId);
 
-      const fileObjAfter = ReactiveCache.getAttachment(fileObjId);
+      const fileObj = ReactiveCache.getAttachment(fileObjId);
 
-      if (fileObjAfter) {
+      if (fileObj) {
         Meteor.defer(() => Meteor.call('moveAttachmentToStorage', fileObjId, storageDestination));
       }
     },
