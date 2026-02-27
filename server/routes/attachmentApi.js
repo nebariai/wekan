@@ -1,5 +1,4 @@
 import { Meteor } from 'meteor/meteor';
-import { Accounts } from 'meteor/accounts-base';
 import { WebApp } from 'meteor/webapp';
 import { ReactiveCache } from '/imports/reactiveCache';
 import { Attachments, fileStoreStrategyFactory } from '/models/attachments';
@@ -12,24 +11,20 @@ import { ObjectID } from 'bson';
 
 // Attachment API HTTP routes
 if (Meteor.isServer) {
-  // Helper function to authenticate API requests using X-User-Id and X-Auth-Token
+  // Helper function to authenticate API requests
   function authenticateApiRequest(req) {
-    const userId = req.headers['x-user-id'];
-    const authToken = req.headers['x-auth-token'];
-
-    if (!userId || !authToken) {
-      throw new Meteor.Error('unauthorized', 'Missing X-User-Id or X-Auth-Token headers');
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Meteor.Error('unauthorized', 'Missing or invalid authorization header');
     }
 
-    // Hash the token and validate against stored login tokens
-    const hashedToken = Accounts._hashLoginToken(authToken);
-    const user = Meteor.users.findOne({
-      _id: userId,
-      'services.resume.loginTokens.hashedToken': hashedToken,
-    });
-
-    if (!user) {
-      throw new Meteor.Error('unauthorized', 'Invalid credentials');
+    const token = authHeader.substring(7);
+    // Here you would validate the token and get the user ID
+    // For now, we'll use a simple approach - in production, you'd want proper JWT validation
+    const userId = token; // This should be replaced with proper token validation
+    
+    if (!userId) {
+      throw new Meteor.Error('unauthorized', 'Invalid token');
     }
 
     return userId;
@@ -52,33 +47,15 @@ if (Meteor.isServer) {
       return next();
     }
 
-    // Set timeout to prevent hanging connections
-    const timeout = setTimeout(() => {
-      if (!res.headersSent) {
-        sendErrorResponse(res, 408, 'Request timeout');
-      }
-    }, 30000); // 30 second timeout
-
     try {
       const userId = authenticateApiRequest(req);
       
       let body = '';
-      let bodyComplete = false;
-      
       req.on('data', chunk => {
         body += chunk.toString();
-        // Prevent excessive payload
-        if (body.length > 50 * 1024 * 1024) { // 50MB limit
-          req.connection.destroy();
-          clearTimeout(timeout);
-        }
       });
 
       req.on('end', () => {
-        if (bodyComplete) return; // Already processed
-        bodyComplete = true;
-        clearTimeout(timeout);
-        
         try {
           const data = JSON.parse(body);
           const { boardId, swimlaneId, listId, cardId, fileData, fileName, fileType, storageBackend } = data;
@@ -177,16 +154,7 @@ if (Meteor.isServer) {
           sendErrorResponse(res, 500, error.message);
         }
       });
-      
-      req.on('error', (error) => {
-        clearTimeout(timeout);
-        if (!res.headersSent) {
-          console.error('Request error:', error);
-          sendErrorResponse(res, 400, 'Request error');
-        }
-      });
     } catch (error) {
-      clearTimeout(timeout);
       sendErrorResponse(res, 401, error.message);
     }
   });
@@ -319,31 +287,15 @@ if (Meteor.isServer) {
       return next();
     }
 
-    const timeout = setTimeout(() => {
-      if (!res.headersSent) {
-        sendErrorResponse(res, 408, 'Request timeout');
-      }
-    }, 30000);
-
     try {
       const userId = authenticateApiRequest(req);
       
       let body = '';
-      let bodyComplete = false;
-      
       req.on('data', chunk => {
         body += chunk.toString();
-        if (body.length > 10 * 1024 * 1024) { // 10MB limit for metadata
-          req.connection.destroy();
-          clearTimeout(timeout);
-        }
       });
 
       req.on('end', () => {
-        if (bodyComplete) return;
-        bodyComplete = true;
-        clearTimeout(timeout);
-        
         try {
           const data = JSON.parse(body);
           const { attachmentId, targetBoardId, targetSwimlaneId, targetListId, targetCardId } = data;
@@ -436,16 +388,7 @@ if (Meteor.isServer) {
           sendErrorResponse(res, 500, error.message);
         }
       });
-      
-      req.on('error', (error) => {
-        clearTimeout(timeout);
-        if (!res.headersSent) {
-          console.error('Request error:', error);
-          sendErrorResponse(res, 400, 'Request error');
-        }
-      });
     } catch (error) {
-      clearTimeout(timeout);
       sendErrorResponse(res, 401, error.message);
     }
   });
@@ -456,31 +399,15 @@ if (Meteor.isServer) {
       return next();
     }
 
-    const timeout = setTimeout(() => {
-      if (!res.headersSent) {
-        sendErrorResponse(res, 408, 'Request timeout');
-      }
-    }, 30000);
-
     try {
       const userId = authenticateApiRequest(req);
       
       let body = '';
-      let bodyComplete = false;
-      
       req.on('data', chunk => {
         body += chunk.toString();
-        if (body.length > 10 * 1024 * 1024) {
-          req.connection.destroy();
-          clearTimeout(timeout);
-        }
       });
 
       req.on('end', () => {
-        if (bodyComplete) return;
-        bodyComplete = true;
-        clearTimeout(timeout);
-        
         try {
           const data = JSON.parse(body);
           const { attachmentId, targetBoardId, targetSwimlaneId, targetListId, targetCardId } = data;
@@ -534,16 +461,7 @@ if (Meteor.isServer) {
           sendErrorResponse(res, 500, error.message);
         }
       });
-      
-      req.on('error', (error) => {
-        clearTimeout(timeout);
-        if (!res.headersSent) {
-          console.error('Request error:', error);
-          sendErrorResponse(res, 400, 'Request error');
-        }
-      });
     } catch (error) {
-      clearTimeout(timeout);
       sendErrorResponse(res, 401, error.message);
     }
   });
