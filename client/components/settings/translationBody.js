@@ -208,7 +208,7 @@ Template.newTranslationPopup.events({
 Template.settingsTranslationPopup.events({
   'click #deleteButton'(event) {
     event.preventDefault();
-    Meteor.call('deleteTranslation', this.translationId);
+    Translation.remove(this.translationId);
     Popup.back();
   }
 });
