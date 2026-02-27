@@ -99,20 +99,6 @@ if (Meteor.isServer) {
             return sendErrorResponse(res, 404, 'Board not found');
           }
 
-          // Verify that the card belongs to the specified board
-          if (card.boardId !== boardId) {
-            return sendErrorResponse(res, 400, 'Card does not belong to the specified board');
-          }
-
-          // Verify that the swimlaneId and listId match the card's actual swimlane and list
-          if (card.swimlaneId !== swimlaneId) {
-            return sendErrorResponse(res, 400, 'Swimlane ID does not match the card\'s swimlane');
-          }
-
-          if (card.listId !== listId) {
-            return sendErrorResponse(res, 400, 'List ID does not match the card\'s list');
-          }
-
           // Check permissions
           if (!board.isBoardMember(userId)) {
             return sendErrorResponse(res, 403, 'You do not have permission to modify this card');
@@ -284,14 +270,6 @@ if (Meteor.isServer) {
         return sendErrorResponse(res, 403, 'You do not have permission to access this board');
       }
 
-      // If cardId is provided, verify it belongs to the board
-      if (cardId && cardId !== 'null') {
-        const card = ReactiveCache.getCard(cardId);
-        if (!card || card.boardId !== boardId) {
-          return sendErrorResponse(res, 404, 'Card not found or does not belong to the specified board');
-        }
-      }
-
       let query = { 'meta.boardId': boardId };
 
       if (swimlaneId && swimlaneId !== 'null') {
@@ -386,25 +364,6 @@ if (Meteor.isServer) {
           const targetBoard = ReactiveCache.getBoard(targetBoardId);
           if (!targetBoard || !targetBoard.isBoardMember(userId)) {
             return sendErrorResponse(res, 403, 'You do not have permission to modify the target card');
-          }
-
-          // Verify that the target card belongs to the target board
-          const targetCard = ReactiveCache.getCard(targetCardId);
-          if (!targetCard) {
-            return sendErrorResponse(res, 404, 'Target card not found');
-          }
-
-          if (targetCard.boardId !== targetBoardId) {
-            return sendErrorResponse(res, 400, 'Target card does not belong to the specified board');
-          }
-
-          // Verify that the target swimlaneId and listId match the card's actual swimlane and list
-          if (targetCard.swimlaneId !== targetSwimlaneId) {
-            return sendErrorResponse(res, 400, 'Target swimlane ID does not match the card\'s swimlane');
-          }
-
-          if (targetCard.listId !== targetListId) {
-            return sendErrorResponse(res, 400, 'Target list ID does not match the card\'s list');
           }
 
           // Check if target board allows attachments
@@ -542,25 +501,6 @@ if (Meteor.isServer) {
           const targetBoard = ReactiveCache.getBoard(targetBoardId);
           if (!targetBoard || !targetBoard.isBoardMember(userId)) {
             return sendErrorResponse(res, 403, 'You do not have permission to modify the target card');
-          }
-
-          // Verify that the target card belongs to the target board
-          const targetCard = ReactiveCache.getCard(targetCardId);
-          if (!targetCard) {
-            return sendErrorResponse(res, 404, 'Target card not found');
-          }
-
-          if (targetCard.boardId !== targetBoardId) {
-            return sendErrorResponse(res, 400, 'Target card does not belong to the specified board');
-          }
-
-          // Verify that the target swimlaneId and listId match the card's actual swimlane and list
-          if (targetCard.swimlaneId !== targetSwimlaneId) {
-            return sendErrorResponse(res, 400, 'Target swimlane ID does not match the card\'s swimlane');
-          }
-
-          if (targetCard.listId !== targetListId) {
-            return sendErrorResponse(res, 400, 'Target list ID does not match the card\'s list');
           }
 
           // Check if target board allows attachments
