@@ -2,14 +2,6 @@ import { ReactiveCache } from '/imports/reactiveCache';
 import { TAPi18n } from '/imports/i18n';
 import { ALLOWED_WAIT_SPINNERS } from '/config/const';
 import LockoutSettings from '/models/lockoutSettings';
-import { 
-  cronMigrationProgress, 
-  cronMigrationStatus, 
-  cronMigrationCurrentStep, 
-  cronMigrationSteps, 
-  cronIsMigrating, 
-  cronJobs 
-} from '/imports/cronMigrationClient';
 
 
 BlazeComponent.extendComponent({
@@ -123,27 +115,15 @@ BlazeComponent.extendComponent({
 
   // Cron settings helpers
   migrationStatus() {
-    return cronMigrationStatus.get() || TAPi18n.__('idle');
+    return TAPi18n.__('idle'); // Placeholder
   },
   
   migrationProgress() {
-    return cronMigrationProgress.get() || 0;
-  },
-  
-  migrationCurrentStep() {
-    return cronMigrationCurrentStep.get() || '';
-  },
-  
-  isMigrating() {
-    return cronIsMigrating.get() || false;
-  },
-  
-  migrationSteps() {
-    return cronMigrationSteps.get() || [];
+    return 0; // Placeholder
   },
   
   cronJobs() {
-    return cronJobs.get() || [];
+    return []; // Placeholder
   },
 
   setLoading(w) {
@@ -189,9 +169,7 @@ BlazeComponent.extendComponent({
   // Event handlers for cron settings
   'click button.js-start-all-migrations'(event) {
     event.preventDefault();
-    this.setLoading(true);
-    Meteor.call('cron.startAllMigrations', (error, result) => {
-      this.setLoading(false);
+    Meteor.call('startAllMigrations', (error, result) => {
       if (error) {
         alert(TAPi18n.__('migration-start-failed') + ': ' + error.reason);
       } else {
@@ -202,9 +180,7 @@ BlazeComponent.extendComponent({
 
   'click button.js-pause-all-migrations'(event) {
     event.preventDefault();
-    this.setLoading(true);
-    Meteor.call('cron.pauseAllMigrations', (error, result) => {
-      this.setLoading(false);
+    Meteor.call('pauseAllMigrations', (error, result) => {
       if (error) {
         alert(TAPi18n.__('migration-pause-failed') + ': ' + error.reason);
       } else {
@@ -216,9 +192,7 @@ BlazeComponent.extendComponent({
   'click button.js-stop-all-migrations'(event) {
     event.preventDefault();
     if (confirm(TAPi18n.__('migration-stop-confirm'))) {
-      this.setLoading(true);
-      Meteor.call('cron.stopAllMigrations', (error, result) => {
-        this.setLoading(false);
+      Meteor.call('stopAllMigrations', (error, result) => {
         if (error) {
           alert(TAPi18n.__('migration-stop-failed') + ': ' + error.reason);
         } else {
@@ -230,28 +204,41 @@ BlazeComponent.extendComponent({
 
   'click button.js-schedule-board-cleanup'(event) {
     event.preventDefault();
-    // Placeholder - board cleanup scheduling
-    alert(TAPi18n.__('board-cleanup-scheduled'));
+    Meteor.call('scheduleBoardCleanup', (error, result) => {
+      if (error) {
+        alert(TAPi18n.__('board-cleanup-failed') + ': ' + error.reason);
+      } else {
+        alert(TAPi18n.__('board-cleanup-scheduled'));
+      }
+    });
   },
 
   'click button.js-schedule-board-archive'(event) {
     event.preventDefault();
-    // Placeholder - board archive scheduling
-    alert(TAPi18n.__('board-archive-scheduled'));
+    Meteor.call('scheduleBoardArchive', (error, result) => {
+      if (error) {
+        alert(TAPi18n.__('board-archive-failed') + ': ' + error.reason);
+      } else {
+        alert(TAPi18n.__('board-archive-scheduled'));
+      }
+    });
   },
 
   'click button.js-schedule-board-backup'(event) {
     event.preventDefault();
-    // Placeholder - board backup scheduling
-    alert(TAPi18n.__('board-backup-scheduled'));
+    Meteor.call('scheduleBoardBackup', (error, result) => {
+      if (error) {
+        alert(TAPi18n.__('board-backup-failed') + ': ' + error.reason);
+      } else {
+        alert(TAPi18n.__('board-backup-scheduled'));
+      }
+    });
   },
 
   'click button.js-pause-job'(event) {
     event.preventDefault();
     const jobId = $(event.target).data('job-id');
-    this.setLoading(true);
-    Meteor.call('cron.pauseJob', jobId, (error, result) => {
-      this.setLoading(false);
+    Meteor.call('pauseCronJob', jobId, (error, result) => {
       if (error) {
         alert(TAPi18n.__('cron-job-pause-failed') + ': ' + error.reason);
       } else {
@@ -264,9 +251,7 @@ BlazeComponent.extendComponent({
     event.preventDefault();
     const jobId = $(event.target).data('job-id');
     if (confirm(TAPi18n.__('cron-job-delete-confirm'))) {
-      this.setLoading(true);
-      Meteor.call('cron.removeJob', jobId, (error, result) => {
-        this.setLoading(false);
+      Meteor.call('deleteCronJob', jobId, (error, result) => {
         if (error) {
           alert(TAPi18n.__('cron-job-delete-failed') + ': ' + error.reason);
         } else {
