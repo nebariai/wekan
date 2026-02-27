@@ -430,57 +430,56 @@ BlazeComponent.extendComponent({
           ) {
             newState = forIt;
           }
-          // Use secure server method; direct client updates to vote are blocked
-          Meteor.call('cards.vote', this.data()._id, newState);
+          this.data().setVote(Meteor.userId(), newState);
         },
         'click .js-poker'(e) {
           let newState = null;
           if ($(e.target).hasClass('js-poker-vote-one')) {
             newState = 'one';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-two')) {
             newState = 'two';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-three')) {
             newState = 'three';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-five')) {
             newState = 'five';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-eight')) {
             newState = 'eight';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-thirteen')) {
             newState = 'thirteen';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-twenty')) {
             newState = 'twenty';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-forty')) {
             newState = 'forty';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-one-hundred')) {
             newState = 'oneHundred';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
           if ($(e.target).hasClass('js-poker-vote-unsure')) {
             newState = 'unsure';
-            Meteor.call('cards.pokerVote', this.data()._id, newState);
+            this.data().setPoker(Meteor.userId(), newState);
           }
         },
         'click .js-poker-finish'(e) {
           if ($(e.target).hasClass('js-poker-finish')) {
             e.preventDefault();
-            const now = new Date();
-            Meteor.call('cards.setPokerEnd', this.data()._id, now);
+            const now = formatDateTime(new Date());
+            this.data().setPokerEnd(now);
           }
         },
 
@@ -488,9 +487,9 @@ BlazeComponent.extendComponent({
           if ($(e.target).hasClass('js-poker-replay')) {
             e.preventDefault();
             this.currentCard = this.currentData();
-            Meteor.call('cards.replayPoker', this.currentCard._id);
-            Meteor.call('cards.unsetPokerEnd', this.currentCard._id);
-            Meteor.call('cards.unsetPokerEstimation', this.currentCard._id);
+            this.currentCard.replayPoker();
+            this.data().unsetPokerEnd();
+            this.data().unsetPokerEstimation();
           }
         },
         'click .js-poker-estimation'(event) {
@@ -501,9 +500,9 @@ BlazeComponent.extendComponent({
             this.find('#pokerEstimation').value = '';
 
             if (ruleTitle) {
-              Meteor.call('cards.setPokerEstimation', this.data()._id, parseInt(ruleTitle, 10));
+              this.data().setPokerEstimation(parseInt(ruleTitle, 10));
             } else {
-              Meteor.call('cards.unsetPokerEstimation', this.data()._id);
+              this.data().setPokerEstimation('');
             }
           }
         },
@@ -1106,15 +1105,20 @@ BlazeComponent.extendComponent({
             'is-checked',
           );
           const endString = this.currentCard.getVoteEnd();
-          Meteor.call('cards.setVoteQuestion', this.currentCard._id, voteQuestion, publicVote, allowNonBoardMembers);
+
+          this.currentCard.setVoteQuestion(
+            voteQuestion,
+            publicVote,
+            allowNonBoardMembers,
+          );
           if (endString) {
-            Meteor.call('cards.setVoteEnd', this.currentCard._id, endString);
+            this.currentCard.setVoteEnd(endString);
           }
           Popup.back();
         },
         'click .js-remove-vote': Popup.afterConfirm('deleteVote', () => {
           event.preventDefault();
-          Meteor.call('cards.unsetVote', this.currentCard._id);
+          this.currentCard.unsetVote();
           Popup.back();
         }),
         'click a.js-toggle-vote-public'(event) {
@@ -1313,10 +1317,10 @@ BlazeComponent.extendComponent({
     ];
   }
   _storeDate(newDate) {
-    Meteor.call('cards.setVoteEnd', this.card._id, newDate);
+    this.card.setVoteEnd(newDate);
   }
   _deleteDate() {
-    Meteor.call('cards.unsetVoteEnd', this.card._id);
+    this.card.unsetVoteEnd();
   }
 }.register('editVoteEndDatePopup'));
 
@@ -1338,14 +1342,17 @@ BlazeComponent.extendComponent({
           );
           const endString = this.currentCard.getPokerEnd();
 
-          Meteor.call('cards.setPokerQuestion', this.currentCard._id, pokerQuestion, allowNonBoardMembers);
+          this.currentCard.setPokerQuestion(
+            pokerQuestion,
+            allowNonBoardMembers,
+          );
           if (endString) {
-            Meteor.call('cards.setPokerEnd', this.currentCard._id, new Date(endString));
+            this.currentCard.setPokerEnd(endString);
           }
           Popup.back();
         },
         'click .js-remove-poker': Popup.afterConfirm('deletePoker', (event) => {
-          Meteor.call('cards.unsetPoker', this.currentCard._id);
+          this.currentCard.unsetPoker();
           Popup.back();
         }),
         'click a.js-toggle-poker-allow-non-members'(event) {
@@ -1566,10 +1573,10 @@ BlazeComponent.extendComponent({
     ];
   }
   _storeDate(newDate) {
-    Meteor.call('cards.setPokerEnd', this.card._id, newDate);
+    this.card.setPokerEnd(newDate);
   }
   _deleteDate() {
-    Meteor.call('cards.unsetPokerEnd', this.card._id);
+    this.card.unsetPokerEnd();
   }
 }.register('editPokerEndDatePopup'));
 
