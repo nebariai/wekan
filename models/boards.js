@@ -2408,7 +2408,7 @@ if (Meteor.isServer) {
    */
   JsonRoutes.add('PUT', '/api/boards/:boardId/labels', function(req, res) {
     const id = req.params.boardId;
-    Authentication.checkBoardWriteAccess(req.userId, id);
+    Authentication.checkBoardAccess(req.userId, id);
     try {
       if (req.body.hasOwnProperty('label')) {
         const board = ReactiveCache.getBoard(id);
